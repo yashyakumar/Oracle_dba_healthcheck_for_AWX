@@ -1,6 +1,8 @@
 ---
 - name: Register Oracle
-  shell: "pgrep pmon"
+  shell: "/usr/bin/pgrep pmon"
+  args: 
+   executable: /bin/bash
   register: pmon_check
   ignore_errors: true
   
@@ -8,13 +10,13 @@
   debug:
     msg: "Oracle is  running"
   when: pmon_check.rc == 0
-- name: If oracle is running
+- name: If oracle is not running
   fail:
     msg: "CRITICAL — Oracle not running on {{ inventory_hostname }}, aborting"
   when: pmon_check.rc != 0
 
 - name: Check disk Space
-  shell: "df -h /home | awk ' NR>1 { print $5 }'| tr -d '%'"
+  shell: /usr/bin/df /home | /usr/bin/awk 'NR>1 {print $5}' | /usr/bin/tr -d '%'
   register: disk_space
   ignore_errors: true
 - name: Ok disk space
@@ -36,6 +38,8 @@
        where    used_percent>  80;
        exit;
        EOF
+     args:
+      executable: /bin/bash
      environment:
       ORACLE_HOME: "{{ oracle_home }}"
       ORACLE_SID: "{{ oracle_sid }}"
@@ -62,6 +66,8 @@
         select OWNER || '|' || OBJECT_NAME || '|' || STATUS from dba_objects where status='INVALID';
         exit;
         EOF
+      args:
+       executable: /bin/bash
       environment:
         ORACLE_HOME: "{{ oracle_home }}"
         ORACLE_SID: "{{ oracle_sid }}"
