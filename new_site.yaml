@@ -1,0 +1,5 @@
+---
+- name: Health check
+  hosts: dbservers
+  roles:
+    -  oracle_dba

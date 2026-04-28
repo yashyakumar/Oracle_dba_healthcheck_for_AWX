@@ -1,0 +1,4 @@
+vars/secrets.yml
+*.vault_pass
+*.retry
+.vault_pass

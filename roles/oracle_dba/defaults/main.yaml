@@ -1,0 +1,6 @@
+oracle_sid: FREE
+pdb_sid: FREEPDB1
+oracle_home: /opt/oracle/product/23ai/dbhomeFree
+orcle_base: /opt/oracle
+user_name: sys
+tablespace_threshold: 80

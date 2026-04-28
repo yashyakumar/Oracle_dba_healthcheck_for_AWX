@@ -1,0 +1,82 @@
+---
+- name: Register Oracle
+  shell: "pgrep pmon"
+  register: pmon_check
+  ignore_errors: true
+  
+- name: If oracle running
+  debug:
+    msg: "Oracle is  running"
+  when: pmon_check.rc == 0
+- name: If oracle is running
+  fail:
+    msg: "CRITICAL — Oracle not running on {{ inventory_hostname }}, aborting"
+  when: pmon_check.rc != 0
+
+- name: Check disk Space
+  shell: "df -h /home | awk ' NR>1 { print $5 }'| tr -d '%'"
+  register: disk_space
+  ignore_errors: true
+- name: Ok disk space
+  debug:
+    msg: "The disk space is {{ disk_space.stdout }} which is  below thershold"
+  when: disk_space.stdout | int < 70
+- name: Not Ok Disk Space
+  debug: 
+   msg: "The disk space is {{ disk_space.stdout }} which is above thershold"
+  when: disk_space.stdout | int > 70
+
+  
+- block:  
+   - name: tablespace check
+     shell: |
+       sqlplus -s {{ user_name }}/{{ user_password }}@{{ pdb_sid }} as {{ user_name }}dba << EOF
+       set pagesize 0 feedback off heading off
+       select tablespace_name|| '|' || round(used_percent,2) as used from dba_tablespace_usage_metrics 
+       where    used_percent>  80;
+       exit;
+       EOF
+     environment:
+      ORACLE_HOME: "{{ oracle_home }}"
+      ORACLE_SID: "{{ oracle_sid }}"
+      PATH: "{{ ansible_env.PATH }}:{{ oracle_home }}/bin"
+     register: ts_result
+     ignore_errors: true
+  rescue:
+    - name: Tablespace Check Failed
+      debug:
+       msg: "Could not connect to Oracle — check ORACLE_SID and ORACLE_HOME"
+- name: print ts results
+  debug: 
+   msg: >-
+    {% if ts_result.stdout_lines | length > 0 %}
+    "There are some tablespaces greater than the thershold,Please check {{ ts_result.stdout_lines }}"
+    {% else %}
+    "All tablespaces usage is below thershold"
+    {% endif %}
+- block:
+    - name: Invalid Objects Check
+      shell: |
+        sqlplus -s {{ user_name }}/{{ user_password }}@{{ pdb_sid }} as {{ user_name }}dba <<EOF
+        set heading off feedback off pagesize 0
+        select OWNER || '|' || OBJECT_NAME || '|' || STATUS from dba_objects where status='INVALID';
+        exit;
+        EOF
+      environment:
+        ORACLE_HOME: "{{ oracle_home }}"
+        ORACLE_SID: "{{ oracle_sid }}"
+        PATH: "{{ ansible_env.PATH }}:{{ oracle_home }}/bin"
+      register: invalid_check
+  rescue:
+    - name: Invalid Check Failed
+      debug:
+       msg: "The invalid check failed  not able to connect oracle check the oracle_home"
+- name: Print Invalid Objects
+  debug:
+   msg: >-
+    {% if invalid_check.stdout_lines | length > 0 %}
+    "There are some invalid objects in your database,Please check {{ invalid_check.stdout_lines }}"
+    {% else %}
+    "There are no invalid objects in your database"
+    {% endif %}
+
