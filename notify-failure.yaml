@@ -1,0 +1,7 @@
+---
+- name: notify-failure
+  hosts: all
+  tasks:
+    - name: failure Check
+      debug:
+        msg: "Maintenance window failed — intervention required"
