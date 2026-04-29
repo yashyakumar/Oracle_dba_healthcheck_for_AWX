@@ -85,4 +85,5 @@
     {% else %}
     "There are no invalid objects in your database"
     {% endif %}
-
+- name: Force failure
+  command: /bin/false
