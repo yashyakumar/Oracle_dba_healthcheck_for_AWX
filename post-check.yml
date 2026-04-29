@@ -1,0 +1,7 @@
+---
+- name: Post-check
+  hosts: all
+  tasks:
+    - name: Post-check status
+      debug:
+        msg: "Post-check completed successfully"

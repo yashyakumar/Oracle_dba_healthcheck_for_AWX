@@ -1,0 +1,7 @@
+---
+- name: Pre-check
+  hosts: all
+  tasks:
+    - name: Pre-check status
+      debug:
+        msg: "Pre-check completed successfully"
